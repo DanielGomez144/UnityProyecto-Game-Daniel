@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.AI;
+using System.Collections.Generic;
 using UnityEngine.SceneManagement;
 
 [RequireComponent(typeof(NavMeshAgent))]
@@ -41,6 +42,11 @@ public class GuardAI : MonoBehaviour
     public float Detection { get; private set; }
     public System.Action<State> OnStateChanged;   // útil para el audio
 
+    [Header("Al ser eliminado")]
+    public float fallYOffset = -0.5f;   // -0.5 para la cápsula de Unity (pivote al centro); 0 si tu modelo tiene el pivote en los pies
+
+    public static readonly List<GuardAI> All = new List<GuardAI>();
+
     NavMeshAgent agent;
     PlayerController playerCtrl;
     Vector3 lastKnownPosition;
@@ -61,6 +67,9 @@ public class GuardAI : MonoBehaviour
         }
         if (player != null) playerCtrl = player.GetComponent<PlayerController>();
     }
+
+    void OnEnable()  { All.Add(this); }
+    void OnDisable() { All.Remove(this); }
 
     void Start()
     {
@@ -228,8 +237,12 @@ public class GuardAI : MonoBehaviour
         if (CurrentState == State.Disabled) return;
         agent.isStopped = true;
         agent.ResetPath();
+        agent.enabled = false;
         SetState(State.Disabled);
-        // Aquí después irá la animación de caer
+
+        // Caída simple: se acuesta en el suelo (luego se puede reemplazar por una animación)
+        transform.rotation = Quaternion.Euler(90f, transform.eulerAngles.y, 0f);
+        transform.position += Vector3.up * fallYOffset;
     }
 
     // ---------- Utilidades ----------
